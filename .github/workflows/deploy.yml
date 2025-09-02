@@ -14,8 +14,6 @@ on:
 env:
   # Replace with your AWS region, e.g., 'us-east-1'
   AWS_REGION: "us-east-1"
-  # This will be dynamically fetched by Terraform and passed to the next job.
-  ECR_REPOSITORY: ""
 
 # --- Permissions ---
 # Grant necessary permissions to the GitHub Actions runner.
@@ -61,12 +59,15 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: ./terraform
 
-      # Step 6: Get the ECR repository name from Terraform output and set it as a job output.
+      # Step 6: Get ECR repo name via JSON output to avoid runner bugs.
       - name: Set ECR Repository Name from Terraform Output
         id: set_ecr_repo
+        working-directory: ./terraform
         run: |
-          cd terraform
-          REPO_NAME=$(terraform output -raw ecr_repository_name)
+          # Save all outputs to a JSON file.
+          terraform output -json > tf_outputs.json
+          # Use jq to parse the specific value we need. This is robust.
+          REPO_NAME=$(jq -r '.ecr_repository_name.value' tf_outputs.json)
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
