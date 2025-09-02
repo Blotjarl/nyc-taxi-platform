@@ -145,3 +145,6 @@ Data Visualization: Amazon Managed Grafana
 Infrastructure as Code: Terraform
 
 CI/CD: GitHub Actions
+
+This project is now fully automated with GitHub Actions!
+
