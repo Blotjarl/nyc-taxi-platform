@@ -41,14 +41,13 @@ jobs:
         uses: actions/checkout@v3
 
       # Step 2: Configure AWS credentials using OpenID Connect (OIDC).
-      # This is the modern, secure way to authenticate without long-lived keys.
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }} # Secret stored in GitHub
           aws-region: ${{ env.AWS_REGION }}
 
-      # Step 3: Set up Terraform.
+      # Step 3: Set up Terraform using the OFFICIAL HashiCorp action.
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -67,7 +66,7 @@ jobs:
         id: set_ecr_repo
         run: |
           cd terraform
-          REPO_NAME=$(terraform output -raw ecr_repository_name | head -n 1)
+          REPO_NAME=$(terraform output -raw ecr_repository_name)
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
