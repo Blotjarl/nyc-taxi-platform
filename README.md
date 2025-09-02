@@ -1,150 +1,66 @@
-Project: NYC Taxi Data Analytics & Prediction Platform
-This project plan outlines the steps to build an end-to-end, cloud-native platform for analyzing and predicting trends in the NYC Taxi dataset. The architecture is serverless, automated, and leverages key AWS services for data processing, machine learning, and business intelligence.
+NYC Taxi Data Analytics & Prediction Platform
+This project implements a complete, end-to-end serverless data platform on AWS to ingest, process, and analyze NYC Taxi trip data. It features an automated Infrastructure as Code (IaC) deployment, a containerized ETL pipeline, and a local data visualization dashboard.
 
-1. Project Goal
-The primary goal is to architect and implement a robust system that can:
+Project Architecture
+The architecture consists of the following components:
 
-Ingest and process millions of NYC taxi trip records efficiently.
+Data Lake (S3): Two S3 buckets store the raw and processed taxi data in Parquet format.
 
-Analyze the data to uncover insights into rider demand, fare structures, and tipping patterns.
+ETL (Fargate): A Python script, containerized with Docker, runs on AWS Fargate to clean the data, perform feature engineering, and write the processed results back to S3.
 
-Develop and deploy a machine learning model to predict trip durations.
+Data Catalog (Glue): An AWS Glue crawler (implicitly used by Athena) catalogs the schema of the processed data.
 
-Automate the entire infrastructure deployment and updates using Infrastructure as Code (IaC) and CI/CD best practices.
+Querying (Athena): Amazon Athena provides a serverless SQL interface to query the processed data directly in S3.
 
-2. Solution Architecture
-The platform will be built on a serverless architecture within AWS to ensure scalability, cost-efficiency, and low operational overhead.
+Automation (Terraform & GitHub Actions): The entire cloud infrastructure is defined with Terraform. A GitHub Actions CI/CD pipeline automates the deployment of infrastructure and the building/publishing of the ETL container.
 
-Workflow:
+Visualization (Jupyter): A local Jupyter Notebook connects to Athena to run SQL queries and visualizes the results using Python libraries like Matplotlib and Seaborn.
 
-Data Ingestion: Raw taxi data (in Parquet format) is downloaded from the NYC TLC website and uploaded to a "raw data" S3 bucket.
-
-ETL & Processing: An AWS Glue crawler catalogs the raw data. A containerized Python script, running on a schedule via AWS Fargate, is triggered to perform cleaning, transformation, and feature engineering. The processed, analysis-ready data is stored in a "processed data" S3 bucket.
-
-Data Analysis: AWS Athena is used to run ad-hoc, serverless SQL queries directly on the processed data in S3 for exploratory data analysis (EDA).
-
-Machine Learning: Amazon SageMaker accesses the processed data to train a Scikit-learn regression model that predicts trip duration. The trained model is then deployed to a SageMaker endpoint for real-time predictions.
-
-Data Visualization: Amazon Managed Grafana connects to Athena as a data source to build interactive dashboards for business intelligence and visualizing key metrics.
-
-Automation & IaC: Terraform is used to define and provision all the required AWS resources. GitHub Actions automates the deployment pipeline, ensuring that any changes to the code or infrastructure are tested and deployed systematically.
-
-3. Phased Implementation Plan
-Phase 1: Infrastructure Foundation & Data Ingestion
-Objective: Set up the core AWS infrastructure and establish the initial data lake.
-
-Tasks:
-
-Write Terraform scripts (main.tf) to provision:
-
-Two S3 buckets: nyc-taxi-raw-data and nyc-taxi-processed-data.
-
-Necessary IAM roles and policies for Glue, Fargate, and SageMaker.
-
-Create a simple Python script to download a sample month of data from the NYC TLC website and upload it to the nyc-taxi-raw-data bucket.
-
-Set up the initial GitHub repository and a basic GitHub Actions workflow to deploy the Terraform infrastructure.
-
-Phase 2: ETL Processing Pipeline
-Objective: Develop and deploy the automated data transformation job.
-
-Tasks:
-
-Write a Python script (process_data.py) using Pandas/Dask to:
-
-Read raw Parquet files from the raw S3 bucket.
-
-Calculate trip duration.
-
-Clean data (handle outliers, missing values).
-
-Write the processed data back to the processed S3 bucket, partitioned by year and month.
-
-Containerize the Python script using a Dockerfile.
-
-Extend the Terraform configuration to provision:
-
-Amazon ECR (Elastic Container Registry) to store the Docker image.
-
-AWS Fargate cluster and task definition to run the container.
-
-AWS Glue crawler to catalog the schema of the processed data.
-
-Update the CI/CD pipeline to build and push the Docker image to ECR upon code changes.
-
-Phase 3: Exploratory Data Analysis (EDA) with Athena
-Objective: Query the processed data to understand patterns and inform the ML model.
-
-Tasks:
-
-Add an AWS Athena Workgroup and Database to the Terraform configuration.
-
-Run the Glue crawler on the processed data bucket to populate the Athena table schema.
-
-Write and execute SQL queries (analysis.sql) in the Athena query editor to explore:
-
-Average trip duration by time of day.
-
-Most popular pickup/dropoff locations.
-
-Correlation between payment type and tip amount.
-
-Phase 4: Machine Learning Model Development
-Objective: Train and deploy a model to predict trip duration.
-
-Tasks:
-
-Add Amazon SageMaker resources to Terraform (e.g., Notebook Instance, Model, Endpoint Configuration).
-
-Create a Jupyter Notebook in SageMaker.
-
-In the notebook:
-
-Load the processed data from S3 into a Pandas DataFrame.
-
-Perform feature engineering (e.g., extracting hour from timestamp, calculating trip distance).
-
-Split data into training and testing sets.
-
-Train a Scikit-learn regression model (e.g., RandomForestRegressor).
-
-Evaluate model performance (RMSE, R²).
-
-Deploy the trained model to a SageMaker endpoint.
-
-Phase 5: Visualization with Amazon Managed Grafana
-Objective: Create interactive dashboards for business users.
-
-Tasks:
-
-Add an Amazon Managed Grafana workspace resource to your Terraform configuration.
-
-From the AWS console, configure the Athena plugin within your Grafana workspace as a data source.
-
-Build at least three dashboards:
-
-Rider Demand: A map visualization showing pickup hotspots based on location coordinates, filterable by time of day. (Note: May require a specific Grafana map plugin).
-
-Fare Distribution: A histogram showing the distribution of total fares.
-
-Tipping Behavior: A bar chart comparing average tip percentage across different payment types (credit_card, cash).
-
-4. Tools and Technologies
+Technology Stack
 Cloud Provider: AWS
-
-Data Lake & Storage: S3
-
-ETL/Processing: AWS Glue, AWS Fargate, Python (Pandas), Docker
-
-Data Warehousing/Querying: Amazon Athena
-
-Machine Learning: Amazon SageMaker, Scikit-learn
-
-Data Visualization: Amazon Managed Grafana
 
 Infrastructure as Code: Terraform
 
+Data Storage: AWS S3
+
+ETL/Containerization: Python (Pandas), Docker, AWS Fargate
+
 CI/CD: GitHub Actions
 
-This project is now fully automated with GitHub Actions!
+Data Querying: AWS Athena
 
+Data Visualization: Python (Jupyter, Matplotlib, Seaborn)
+
+Project Phases
+[x] Phase 1: Infrastructure & Ingestion: Deployed foundational AWS resources with Terraform and ingested the first month of raw data.
+
+[x] Phase 2: ETL Containerization: Built a Docker container for the Python processing script and tested it locally.
+
+[x] Phase 3: CI/CD Automation: Created a GitHub Actions workflow to automate infrastructure and container deployment.
+
+[x] Phase 4: Data Analysis: Ran exploratory SQL queries against the processed data using AWS Athena.
+
+[ ] Phase 5: Visualization: Use a local Jupyter Notebook to run Athena queries and create visualizations.
+
+How to Run Locally
+Prerequisites: Ensure you have Terraform, Docker, Python 3.9+, and the AWS CLI installed and configured.
+
+Deploy Infrastructure:
+
+cd terraform
+terraform init
+terraform apply
+
+Run ETL Locally (Optional):
+
+# From project root
+docker build -t nyc-taxi-etl .
+docker run --rm -v ~/.aws:/root/.aws:ro -v $(pwd)/terraform:/app/terraform:ro nyc-taxi-etl
+
+Run Visualization Notebook:
+
+# From project root
+pip install jupyterlab pandas boto3 matplotlib seaborn
+jupyter lab
+
+Then, open the analysis.ipynb notebook and run the cells.
