@@ -59,15 +59,13 @@ jobs:
         run: terraform apply -auto-approve
         working-directory: ./terraform
 
-      # Step 6: Get ECR repo name via JSON output to avoid runner bugs.
+      # Step 6: Read the output directly from the Terraform state file.
+      # This bypasses the buggy 'terraform output' command in the runner.
       - name: Set ECR Repository Name from Terraform Output
         id: set_ecr_repo
         working-directory: ./terraform
         run: |
-          # Save all outputs to a JSON file.
-          terraform output -json > tf_outputs.json
-          # Use jq to parse the specific value we need. This is robust.
-          REPO_NAME=$(jq -r '.ecr_repository_name.value' tf_outputs.json)
+          REPO_NAME=$(jq -r '.outputs.ecr_repository_name.value' terraform.tfstate)
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
