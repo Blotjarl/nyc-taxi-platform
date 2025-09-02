@@ -1,0 +1,15 @@
+.venv/
+venv/
+env/
+
+pycache/
+*.pyc
+*.pyo
+*.pyd
+
+terraform/.tfstate
+terraform/.tfstate.*
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+
+*.parquet

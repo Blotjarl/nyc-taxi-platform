@@ -1,0 +1,107 @@
+# .github/workflows/deploy.yml
+# This workflow automates infrastructure deployment and ETL container publishing.
+
+name: Deploy Infrastructure and ETL Container
+
+# Trigger this workflow on every push to the 'main' branch.
+on:
+  push:
+    branches:
+      - main
+
+# --- Environment Variables ---
+# Define variables used across the jobs.
+env:
+  # Replace with your AWS region, e.g., 'us-east-1'
+  AWS_REGION: "us-east-1"
+  # This will be dynamically fetched by Terraform and passed to the next job.
+  ECR_REPOSITORY: ""
+
+# --- Permissions ---
+# Grant necessary permissions to the GitHub Actions runner.
+permissions:
+  id-token: write # Required for authenticating with AWS using OIDC.
+  contents: read  # Required to check out the repository code.
+
+# --- Jobs ---
+# A workflow is made up of one or more jobs that run in parallel or sequentially.
+jobs:
+  # --- Job 1: Deploy Terraform Infrastructure ---
+  deploy-infrastructure:
+    name: Deploy Terraform Infrastructure
+    runs-on: ubuntu-latest # Use a standard Linux runner.
+    
+    # Define outputs that this job can pass to other jobs.
+    outputs:
+      ecr_repo_name: ${{ steps.set_ecr_repo.outputs.repo_name }}
+
+    steps:
+      # Step 1: Check out the repository code.
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Configure AWS credentials using OpenID Connect (OIDC).
+      # This is the modern, secure way to authenticate without long-lived keys.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }} # Secret stored in GitHub
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3: Set up Terraform.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      # Step 4: Run 'terraform init'.
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      # Step 5: Run 'terraform apply'.
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./terraform
+
+      # Step 6: Get the ECR repository name from Terraform output and set it as a job output.
+      - name: Set ECR Repository Name from Terraform Output
+        id: set_ecr_repo
+        run: |
+          cd terraform
+          REPO_NAME=$(terraform output -raw ecr_repository_name)
+          echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
+        shell: bash
+
+  # --- Job 2: Build and Push Docker Image to ECR ---
+  build-and-push-image:
+    name: Build and Push ETL Image
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure # This job will only run if the first job succeeds.
+
+    steps:
+      # Step 1: Check out the repository code.
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Configure AWS credentials (same as the first job).
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3: Log in to Amazon ECR.
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Step 4: Build the Docker image, tag it, and push it to ECR.
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          # Use the ECR repository URI from the login step and the name from the previous job's output.
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY_NAME: ${{ needs.deploy-infrastructure.outputs.ecr_repo_name }}
+          IMAGE_TAG: latest # Tag the image as 'latest'.
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG
+
