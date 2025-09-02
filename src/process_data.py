@@ -56,8 +56,8 @@ def main():
     key = latest_object['Key']
     
     input_path = f's3://{raw_bucket}/{key}'
-    # --- THIS LINE IS REVERTED ---
-    output_path = f's3://{processed_bucket}/{key}' # Write to the root of the processed bucket
+    # --- THIS IS THE CORRECTED LINE ---
+    output_path = f's3://{processed_bucket}/trips/{key}' # Write to the 'trips/' subfolder
 
     print(f"Reading data from: {input_path}")
     df = pd.read_parquet(input_path)
@@ -96,4 +96,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
