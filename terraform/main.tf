@@ -159,3 +159,8 @@ output "ecr_repository_name" {
   description = "The name of the ECR repository for the ETL container."
   value       = aws_ecr_repository.taxi_processing_repo.name
 }
+
+output "ecs_task_definition_family" {
+  description = "The family name of the ECS task definition."
+  value       = aws_ecs_task_definition.processing_task.family
+}
