@@ -67,7 +67,7 @@ jobs:
         id: set_ecr_repo
         run: |
           cd terraform
-          REPO_NAME=$(terraform output -raw ecr_repository_name)
+          REPO_NAME=$(terraform output -raw ecr_repository_name | head -n 1)
           echo "repo_name=$REPO_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
