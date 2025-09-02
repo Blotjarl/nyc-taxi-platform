@@ -155,3 +155,7 @@ output "ecr_repository_url" {
   value = aws_ecr_repository.taxi_processing_repo.repository_url
 }
 
+output "ecr_repository_name" {
+  description = "The name of the ECR repository for the ETL container."
+  value       = aws_ecr_repository.etl_repo.name
+}
